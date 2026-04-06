@@ -1,0 +1,18 @@
+{
+  "name": "Morning Desk",
+  "short_name": "Desk",
+  "description": "Weather and creatine tracker for Denver mornings",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

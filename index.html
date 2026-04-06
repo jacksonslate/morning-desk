@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Morning Desk">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Morning Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --fg:         #EDE8DC;        /* warm white — default text */
+      --fg-dim:     #8A857A;        /* muted warm gray */
+      --amber:      #f5c84a;        /* gold — accents, borders, creatine */
+      --amber-dim:  #7a6018;
+      --amber-glow: rgba(245, 195, 60, 0.35);
+      --green:      #6ee7b7;        /* soft mint */
+      --green-glow: rgba(110, 231, 183, 0.38);
+      --bg:         #0d0a06;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      /* Use dvh so iOS Safari accounts for the address bar correctly */
+      height: 100vh;
+      height: 100dvh;
+      min-height: -webkit-fill-available;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'VT323', monospace;
+      color: var(--fg);
+      display: flex;
+      padding-top:    env(safe-area-inset-top);
+      padding-right:  env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left:   env(safe-area-inset-left);
+    }
+
+    /* ── CRT Scanlines ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0, 0, 0, 0.16) 3px,
+        rgba(0, 0, 0, 0.16) 4px
+      );
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    /* ── CRT Vignette ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(4, 2, 0, 0.75) 100%);
+      pointer-events: none;
+      z-index: 199;
+    }
+
+    @keyframes flicker {
+      0%,  89%, 91%, 94%, 96%, 100% { opacity: 1; }
+      90%  { opacity: 0.94; }
+      93%  { opacity: 0.97; }
+      95%  { opacity: 0.96; }
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      animation: flicker 9s ease-in-out infinite;
+    }
+
+    /* ── Panels ── */
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      position: relative;
+      min-width: 0;
+    }
+
+    .divider {
+      width: 1px;
+      align-self: stretch;
+      margin: 24px 0;
+      background: linear-gradient(to bottom, transparent, var(--amber-dim) 30%, var(--amber-dim) 70%, transparent);
+      opacity: 0.45;
+      box-shadow: 0 0 6px var(--amber-glow);
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════
+       WEATHER PANEL
+    ════════════════════════════════ */
+    .weather-icon {
+      width: 78px;
+      height: 78px;
+      flex-shrink: 0;
+      /* icons carry their own fill colors */
+    }
+    .weather-icon svg { width: 100%; height: 100%; display: block; }
+
+    .temperature {
+      font-size: 84px;
+      line-height: 0.88;
+      color: var(--fg);
+      text-shadow: 0 0 14px rgba(237, 232, 220, 0.30);
+      margin-top: 6px;
+      letter-spacing: -1px;
+    }
+
+    .conditions {
+      font-size: 22px;
+      color: var(--fg-dim);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 4px;
+    }
+
+    .weather-msg {
+      font-size: 20px;
+      color: var(--fg);
+      opacity: 0.75;
+      text-align: center;
+      line-height: 1.25;
+      margin-top: 10px;
+      max-width: 300px;
+    }
+
+    .last-updated {
+      position: absolute;
+      bottom: 7px;
+      font-size: 14px;
+      color: var(--fg-dim);
+      opacity: 0.45;
+      letter-spacing: 1px;
+    }
+
+    /* ════════════════════════════════
+       CREATINE PANEL — RPG dialog style
+    ════════════════════════════════ */
+
+    /* The outer dialog box — double-border like a Pokémon menu */
+    .rpg-box {
+      position: relative;
+      padding: 22px 36px;
+      min-width: 270px;
+      text-align: center;
+      background: var(--bg);
+      /* Outer glow + double border using box-shadow layers */
+      border: 3px solid var(--amber);
+      box-shadow:
+        inset 0 0 0 3px var(--bg),
+        inset 0 0 0 6px var(--amber),
+        0 0 18px var(--amber-glow);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      touch-action: manipulation;
+      transition: box-shadow 0.15s ease;
+    }
+
+    .rpg-box:active {
+      transform: scale(0.96);
+      box-shadow:
+        inset 0 0 0 3px var(--bg),
+        inset 0 0 0 6px var(--amber),
+        0 0 36px var(--amber-glow);
+    }
+
+    /* ── Idle state ── */
+    .rpg-idle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    @keyframes cursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .rpg-cursor {
+      font-size: 28px;
+      animation: cursorBlink 0.9s step-end infinite;
+      color: var(--amber);
+      text-shadow: 0 0 8px var(--amber);
+      flex-shrink: 0;
+    }
+
+    .rpg-text {
+      font-size: 28px;
+      color: var(--amber);
+      text-shadow: 0 0 8px var(--amber-glow);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+
+    /* ── Taken state ── */
+    .rpg-taken {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rpg-stars {
+      font-size: 22px;
+      letter-spacing: 8px;
+      color: var(--green);
+      text-shadow: 0 0 10px var(--green-glow);
+    }
+
+    .rpg-taken-text {
+      font-size: 30px;
+      color: var(--green);
+      text-shadow: 0 0 12px var(--green-glow);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      line-height: 1.1;
+    }
+
+    .rpg-taken-sub {
+      font-size: 20px;
+      color: var(--green);
+      opacity: 0.65;
+      text-shadow: 0 0 6px var(--green-glow);
+      letter-spacing: 2px;
+    }
+
+    /* Box state: taken */
+    @keyframes boxBurst {
+      0%   { transform: scale(0.96); }
+      50%  { transform: scale(1.06); }
+      80%  { transform: scale(0.99); }
+      100% { transform: scale(1.00); }
+    }
+
+    @keyframes greenPulse {
+      0%, 100% { box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 6px var(--green), 0 0 18px var(--green-glow); }
+      50%       { box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 6px var(--green), 0 0 38px var(--green-glow); }
+    }
+
+    .rpg-box.taken {
+      border-color: var(--green);
+      cursor: default;
+      pointer-events: none;
+      animation: boxBurst 0.4s ease forwards, greenPulse 3s ease-in-out 0.45s infinite;
+    }
+
+    .rpg-box.taken.restored {
+      animation: greenPulse 3s ease-in-out infinite;
+    }
+
+    /* Sparkle particles */
+    .sparks {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    @keyframes spark {
+      0%   { transform: translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+
+    .spark {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green-glow);
+      animation: spark 0.6s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- ── Left: Weather ── -->
+    <div class="panel" id="weather-panel">
+      <div class="weather-icon" id="weather-icon"></div>
+      <div class="temperature" id="temperature">--°</div>
+      <div class="conditions" id="conditions">SYNCING</div>
+      <div class="weather-msg" id="weather-msg"></div>
+      <div class="last-updated" id="last-updated"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Right: Creatine ── -->
+    <div class="panel">
+      <div class="rpg-box" id="rpg-box">
+
+        <!-- idle -->
+        <div class="rpg-idle" id="rpg-idle">
+          <span class="rpg-cursor">▶</span>
+          <span class="rpg-text">Take<br>Creatine?</span>
+        </div>
+
+        <!-- taken -->
+        <div class="rpg-taken" id="rpg-taken">
+          <div class="rpg-stars">★ ★ ★</div>
+          <div class="rpg-taken-text">Creatine<br>Taken!</div>
+          <div class="rpg-taken-sub">keep it up!</div>
+          <div class="rpg-stars">★ ★ ★</div>
+        </div>
+
+        <!-- spark container (filled by JS) -->
+        <div class="sparks" id="sparks"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Service Worker ─────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    // ── Weather Icons ──────────────────────────────────────────
+    const ICONS = {
+      // ☀️ warm yellow sun
+      sun: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="19" fill="#FFD44E"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(0,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(45,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(90,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(135,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(180,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(225,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(270,50,50)"/>
+        <rect x="47" y="3"  width="6" height="16" fill="#FFD44E" transform="rotate(315,50,50)"/>
+      </svg>`,
+
+      // 🌤 yellow sun peeking behind blue-gray cloud
+      partlyCloudy: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="67" cy="30" r="15" fill="#FFD44E"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(0,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(45,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(90,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(135,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(180,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(225,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(270,67,30)"/>
+        <rect x="64" y="5"  width="6" height="12" fill="#FFD44E" transform="rotate(315,67,30)"/>
+        <rect x="4"  y="56" width="75" height="26" rx="10" fill="#9AAFC0"/>
+        <rect x="16" y="44" width="52" height="20" rx="8"  fill="#9AAFC0"/>
+        <rect x="30" y="35" width="32" height="17" rx="7"  fill="#9AAFC0"/>
+      </svg>`,
+
+      // ☁️ solid blue-gray cloud
+      cloudy: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8"  y="52" width="84" height="30" rx="11" fill="#9AAFC0"/>
+        <rect x="22" y="38" width="58" height="24" rx="10" fill="#9AAFC0"/>
+        <rect x="38" y="27" width="36" height="21" rx="9"  fill="#9AAFC0"/>
+      </svg>`,
+
+      // 🌧 gray cloud, blue rain
+      rain: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8"  y="16" width="84" height="26" rx="10" fill="#7A94A8"/>
+        <rect x="22" y="6"  width="56" height="18" rx="8"  fill="#7A94A8"/>
+        <rect x="18" y="52" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="33" y="56" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="48" y="52" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="63" y="56" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="78" y="52" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="25" y="72" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="40" y="76" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="55" y="72" width="5" height="15" rx="2" fill="#5BA8D8"/>
+        <rect x="70" y="76" width="5" height="15" rx="2" fill="#5BA8D8"/>
+      </svg>`,
+
+      // ❄️ gray cloud, icy white-blue snow
+      snow: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8"  y="14" width="84" height="26" rx="10" fill="#8FA5B8"/>
+        <rect x="22" y="4"  width="56" height="18" rx="8"  fill="#8FA5B8"/>
+        <circle cx="22" cy="57" r="4.5" fill="#C8E8F8"/>
+        <circle cx="40" cy="63" r="4.5" fill="#C8E8F8"/>
+        <circle cx="58" cy="57" r="4.5" fill="#C8E8F8"/>
+        <circle cx="76" cy="63" r="4.5" fill="#C8E8F8"/>
+        <circle cx="31" cy="78" r="3.5" fill="#C8E8F8"/>
+        <circle cx="49" cy="84" r="3.5" fill="#C8E8F8"/>
+        <circle cx="67" cy="78" r="3.5" fill="#C8E8F8"/>
+        <circle cx="85" cy="84" r="3.5" fill="#C8E8F8"/>
+      </svg>`,
+
+      // ⛈ dark cloud, yellow bolt
+      thunder: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8"  y="14" width="84" height="26" rx="10" fill="#607888"/>
+        <rect x="22" y="4"  width="56" height="18" rx="8"  fill="#607888"/>
+        <polygon points="57,47 43,70 53,70 39,96 65,67 55,67 69,47" fill="#FFE030"/>
+      </svg>`,
+
+      // 🌫 cool gray fog lines
+      fog: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8"  y="10" width="84" height="11" rx="5.5" fill="#8A9EAE"/>
+        <rect x="18" y="30" width="64" height="11" rx="5.5" fill="#8A9EAE"/>
+        <rect x="8"  y="50" width="84" height="11" rx="5.5" fill="#8A9EAE"/>
+        <rect x="18" y="70" width="64" height="11" rx="5.5" fill="#8A9EAE"/>
+        <rect x="8"  y="88" width="84" height="10" rx="5"   fill="#8A9EAE" opacity="0.4"/>
+      </svg>`,
+    };
+
+    function iconForCode(code) {
+      if (code <= 1)  return ICONS.sun;
+      if (code === 2) return ICONS.partlyCloudy;
+      if (code === 3) return ICONS.cloudy;
+      if (code <= 48) return ICONS.fog;
+      if (code <= 67) return ICONS.rain;
+      if (code <= 77) return ICONS.snow;
+      if (code <= 82) return ICONS.rain;
+      if (code <= 86) return ICONS.snow;
+      return ICONS.thunder;
+    }
+
+    function conditionText(code) {
+      const map = {
+        0:'Clear Sky', 1:'Mainly Clear', 2:'Partly Cloudy', 3:'Overcast',
+        45:'Foggy', 48:'Freezing Fog',
+        51:'Light Drizzle', 53:'Drizzle', 55:'Heavy Drizzle',
+        56:'Freezing Drizzle', 57:'Freezing Drizzle',
+        61:'Light Rain', 63:'Rain', 65:'Heavy Rain',
+        66:'Freezing Rain', 67:'Freezing Rain',
+        71:'Light Snow', 73:'Snow', 75:'Heavy Snow', 77:'Snow Grains',
+        80:'Showers', 81:'Showers', 82:'Heavy Showers',
+        85:'Snow Showers', 86:'Heavy Snow Showers',
+        95:'Thunderstorm', 96:'Thunderstorm', 99:'Thunderstorm'
+      };
+      return map[code] || 'Unknown';
+    }
+
+    function weatherMessage(temp) {
+      if (temp < 30) return "It's brutal out there. Bundle up.";
+      if (temp < 50) return "Wear a coat today.";
+      if (temp < 70) return "Pretty comfortable out there.";
+      if (temp < 85) return "Nice out. Maybe bring a t-shirt to change into.";
+      return "It's hot. Dress light.";
+    }
+
+    // ── Weather fetch with auto-retry ─────────────────────────
+    let retryTimer = null;
+
+    async function fetchWeather() {
+      try {
+        const res = await fetch(
+          'https://api.open-meteo.com/v1/forecast' +
+          '?latitude=39.7392&longitude=-104.9903' +
+          '&current=temperature_2m,weather_code' +
+          '&temperature_unit=fahrenheit' +
+          '&timezone=America%2FDenver'
+        );
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        const temp = Math.round(data.current.temperature_2m);
+        const code = data.current.weather_code ?? data.current.weathercode ?? 0;
+
+        document.getElementById('weather-icon').innerHTML = iconForCode(code);
+        document.getElementById('temperature').textContent = temp + '°';
+        document.getElementById('conditions').textContent  = conditionText(code);
+        document.getElementById('weather-msg').textContent = weatherMessage(temp);
+
+        const now = new Date();
+        document.getElementById('last-updated').textContent =
+          'UPDATED ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        // Success — clear any retry loop
+        if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+
+      } catch {
+        document.getElementById('conditions').textContent  = 'NO SIGNAL';
+        document.getElementById('weather-msg').textContent = 'Retrying...';
+
+        // Retry every 15s until success
+        if (!retryTimer) {
+          retryTimer = setInterval(fetchWeather, 15_000);
+        }
+      }
+    }
+
+    // ── Creatine tracker ──────────────────────────────────────
+    const KEY = 'creatine_date';
+
+    function today() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function spawnSparks() {
+      const container = document.getElementById('sparks');
+      container.innerHTML = '';
+      const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+      angles.forEach(angle => {
+        const rad  = angle * Math.PI / 180;
+        const dist = 60 + Math.random() * 30;
+        const dx   = Math.round(Math.cos(rad) * dist);
+        const dy   = Math.round(Math.sin(rad) * dist);
+        const el   = document.createElement('div');
+        el.className = 'spark';
+        el.style.setProperty('--dx', dx + 'px');
+        el.style.setProperty('--dy', dy + 'px');
+        container.appendChild(el);
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+      });
+    }
+
+    function setTaken(animate) {
+      const box   = document.getElementById('rpg-box');
+      const idle  = document.getElementById('rpg-idle');
+      const taken = document.getElementById('rpg-taken');
+
+      box.classList.add('taken');
+      if (!animate) box.classList.add('restored');
+      idle.style.display  = 'none';
+      taken.style.display = 'flex';
+
+      if (animate) spawnSparks();
+    }
+
+    function setUntaken() {
+      const box   = document.getElementById('rpg-box');
+      const idle  = document.getElementById('rpg-idle');
+      const taken = document.getElementById('rpg-taken');
+
+      box.classList.remove('taken', 'restored');
+      idle.style.display  = 'flex';
+      taken.style.display = 'none';
+    }
+
+    document.getElementById('rpg-box').addEventListener('click', () => {
+      if (document.getElementById('rpg-box').classList.contains('taken')) return;
+      localStorage.setItem(KEY, today());
+      setTaken(true);
+    });
+
+    function scheduleMidnightReset() {
+      const now      = new Date();
+      const midnight = new Date(now);
+      midnight.setDate(midnight.getDate() + 1);
+      midnight.setHours(0, 0, 2, 0);
+      setTimeout(() => {
+        setUntaken();
+        localStorage.removeItem(KEY);
+        scheduleMidnightReset();
+      }, midnight - now);
+    }
+
+    // ── Boot ─────────────────────────────────────────────────
+    if (localStorage.getItem(KEY) === today()) {
+      setTaken(false);
+    }
+    scheduleMidnightReset();
+
+    fetchWeather();
+    setInterval(fetchWeather, 30 * 60 * 1000);
+  </script>
+</body>
+</html>
