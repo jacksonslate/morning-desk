@@ -113,108 +113,107 @@
        WEATHER PANEL
     ════════════════════════════════ */
     .weather-icon {
-      width: 78px;
-      height: 78px;
+      width: 124px;
+      height: 124px;
       flex-shrink: 0;
-      /* icons carry their own fill colors */
+      transition: filter 0.4s ease;
     }
     .weather-icon svg { width: 100%; height: 100%; display: block; }
 
     .temperature {
-      font-size: 84px;
+      font-size: 100px;
       line-height: 0.88;
       color: var(--fg);
-      text-shadow: 0 0 14px rgba(237, 232, 220, 0.30);
-      margin-top: 6px;
-      letter-spacing: -1px;
+      letter-spacing: -2px;
+      margin-top: 4px;
     }
 
     .conditions {
-      font-size: 22px;
+      font-size: 18px;
       color: var(--fg-dim);
       text-transform: uppercase;
-      letter-spacing: 3px;
-      margin-top: 4px;
+      letter-spacing: 5px;
+      margin-top: 6px;
+    }
+
+    /* thin rule between temp block and message */
+    .weather-rule {
+      width: 40px;
+      height: 1px;
+      background: var(--fg-dim);
+      opacity: 0.30;
+      margin-top: 14px;
+      flex-shrink: 0;
     }
 
     .weather-msg {
       font-size: 20px;
       color: var(--fg);
-      opacity: 0.75;
+      opacity: 0.60;
       text-align: center;
-      line-height: 1.25;
+      line-height: 1.3;
       margin-top: 10px;
       max-width: 300px;
     }
 
     .last-updated {
       position: absolute;
-      bottom: 7px;
-      font-size: 14px;
+      bottom: 8px;
+      font-size: 13px;
       color: var(--fg-dim);
-      opacity: 0.45;
+      opacity: 0.35;
       letter-spacing: 1px;
     }
 
     /* ════════════════════════════════
-       CREATINE PANEL — RPG dialog style
+       CREATINE PANEL
     ════════════════════════════════ */
 
-    /* The outer dialog box — double-border like a Pokémon menu */
     .rpg-box {
       position: relative;
-      padding: 22px 36px;
-      min-width: 270px;
+      padding: 26px 48px;
+      min-width: 310px;
       text-align: center;
-      background: var(--bg);
-      /* Outer glow + double border using box-shadow layers */
-      border: 3px solid var(--amber);
-      box-shadow:
-        inset 0 0 0 3px var(--bg),
-        inset 0 0 0 6px var(--amber),
-        0 0 18px var(--amber-glow);
+      background: rgba(237, 232, 220, 0.03);
+      border: 1px solid rgba(237, 232, 220, 0.22);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       touch-action: manipulation;
-      transition: box-shadow 0.15s ease;
+      transition: background 0.15s ease, border-color 0.2s ease;
     }
 
     .rpg-box:active {
-      transform: scale(0.96);
-      box-shadow:
-        inset 0 0 0 3px var(--bg),
-        inset 0 0 0 6px var(--amber),
-        0 0 36px var(--amber-glow);
+      transform: scale(0.95);
+      background: rgba(237, 232, 220, 0.07);
     }
 
     /* ── Idle state ── */
     .rpg-idle {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      gap: 12px;
     }
 
     @keyframes cursorBlink {
-      0%, 49% { opacity: 1; }
+      0%, 49% { opacity: 0.8; }
       50%, 100% { opacity: 0; }
     }
 
     .rpg-cursor {
-      font-size: 28px;
-      animation: cursorBlink 0.9s step-end infinite;
-      color: var(--amber);
-      text-shadow: 0 0 8px var(--amber);
+      font-size: 24px;
+      animation: cursorBlink 1s step-end infinite;
+      color: var(--fg);
       flex-shrink: 0;
     }
 
     .rpg-text {
-      font-size: 28px;
-      color: var(--amber);
-      text-shadow: 0 0 8px var(--amber-glow);
+      font-size: 30px;
+      color: var(--fg);
       text-transform: uppercase;
-      letter-spacing: 2px;
-      line-height: 1.1;
+      letter-spacing: 3px;
+      white-space: nowrap;
     }
 
     /* ── Taken state ── */
@@ -222,48 +221,48 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
 
     .rpg-stars {
-      font-size: 22px;
-      letter-spacing: 8px;
+      font-size: 20px;
+      letter-spacing: 10px;
       color: var(--green);
-      text-shadow: 0 0 10px var(--green-glow);
+      opacity: 0.85;
     }
 
     .rpg-taken-text {
-      font-size: 30px;
+      font-size: 32px;
       color: var(--green);
-      text-shadow: 0 0 12px var(--green-glow);
       text-transform: uppercase;
       letter-spacing: 3px;
       line-height: 1.1;
     }
 
     .rpg-taken-sub {
-      font-size: 20px;
+      font-size: 18px;
       color: var(--green);
-      opacity: 0.65;
-      text-shadow: 0 0 6px var(--green-glow);
-      letter-spacing: 2px;
+      opacity: 0.55;
+      letter-spacing: 3px;
+      margin-top: 2px;
     }
 
-    /* Box state: taken */
+    /* ── Taken box state ── */
     @keyframes boxBurst {
-      0%   { transform: scale(0.96); }
-      50%  { transform: scale(1.06); }
+      0%   { transform: scale(0.95); }
+      55%  { transform: scale(1.05); }
       80%  { transform: scale(0.99); }
       100% { transform: scale(1.00); }
     }
 
     @keyframes greenPulse {
-      0%, 100% { box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 6px var(--green), 0 0 18px var(--green-glow); }
-      50%       { box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 6px var(--green), 0 0 38px var(--green-glow); }
+      0%, 100% { box-shadow: 0 0 10px rgba(110, 231, 183, 0.12); }
+      50%       { box-shadow: 0 0 28px rgba(110, 231, 183, 0.28); }
     }
 
     .rpg-box.taken {
-      border-color: var(--green);
+      border-color: rgba(110, 231, 183, 0.40);
+      background: rgba(110, 231, 183, 0.04);
       cursor: default;
       pointer-events: none;
       animation: boxBurst 0.4s ease forwards, greenPulse 3s ease-in-out 0.45s infinite;
@@ -273,7 +272,7 @@
       animation: greenPulse 3s ease-in-out infinite;
     }
 
-    /* Sparkle particles */
+    /* ── Spark particles ── */
     .sparks {
       position: absolute;
       inset: 0;
@@ -289,10 +288,9 @@
     .spark {
       position: absolute;
       top: 50%; left: 50%;
-      width: 6px; height: 6px;
+      width: 5px; height: 5px;
       border-radius: 50%;
       background: var(--green);
-      box-shadow: 0 0 6px var(--green-glow);
       animation: spark 0.6s ease-out forwards;
     }
   </style>
@@ -305,6 +303,7 @@
       <div class="weather-icon" id="weather-icon"></div>
       <div class="temperature" id="temperature">--°</div>
       <div class="conditions" id="conditions">SYNCING</div>
+      <div class="weather-rule"></div>
       <div class="weather-msg" id="weather-msg"></div>
       <div class="last-updated" id="last-updated"></div>
     </div>
@@ -462,6 +461,18 @@
       return "It's hot. Dress light.";
     }
 
+    function iconGlow(code) {
+      if (code <= 1)  return 'drop-shadow(0 0 14px rgba(255, 212, 78, 0.55))';
+      if (code === 2) return 'drop-shadow(0 0 10px rgba(154, 175, 192, 0.40))';
+      if (code === 3) return 'drop-shadow(0 0 10px rgba(154, 175, 192, 0.35))';
+      if (code <= 48) return 'drop-shadow(0 0 8px  rgba(138, 158, 174, 0.30))';
+      if (code <= 67) return 'drop-shadow(0 0 12px rgba(91,  168, 216, 0.50))';
+      if (code <= 77) return 'drop-shadow(0 0 12px rgba(200, 232, 248, 0.50))';
+      if (code <= 82) return 'drop-shadow(0 0 12px rgba(91,  168, 216, 0.50))';
+      if (code <= 86) return 'drop-shadow(0 0 12px rgba(200, 232, 248, 0.50))';
+      return             'drop-shadow(0 0 14px rgba(255, 224, 48,  0.55))';
+    }
+
     // ── Weather fetch with auto-retry ─────────────────────────
     let retryTimer = null;
 
@@ -480,7 +491,9 @@
         const temp = Math.round(data.current.temperature_2m);
         const code = data.current.weather_code ?? data.current.weathercode ?? 0;
 
-        document.getElementById('weather-icon').innerHTML = iconForCode(code);
+        const iconEl = document.getElementById('weather-icon');
+        iconEl.innerHTML = iconForCode(code);
+        iconEl.style.filter = iconGlow(code);
         document.getElementById('temperature').textContent = temp + '°';
         document.getElementById('conditions').textContent  = conditionText(code);
         document.getElementById('weather-msg').textContent = weatherMessage(temp);
