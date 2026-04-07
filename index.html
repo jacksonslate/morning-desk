@@ -133,12 +133,12 @@
 
     /* conditions + message span the full panel width */
     .conditions {
-      display: flex;
-      justify-content: space-between;
-      font-size: 17px;
+      font-size: 26px;
       color: var(--fg-dim);
       text-transform: uppercase;
-      margin-top: 12px;
+      letter-spacing: 0.35em;
+      text-align: center;
+      margin-top: 10px;
       width: 100%;
     }
 
@@ -456,16 +456,7 @@
       return "It's hot. Dress light.";
     }
 
-    // Spread condition text across full width
-    function setConditions(text) {
-      const el = document.getElementById('conditions');
-      const parts = text.includes(' ')
-        ? text.split(' ').map(w => `<span>${w}</span>`).join('')
-        : text.split('').map(c => `<span>${c}</span>`).join('');
-      el.innerHTML = parts;
-    }
-
-    function iconGlow(code) {
+function iconGlow(code) {
       if (code <= 1)  return 'drop-shadow(0 0 14px rgba(255, 212, 78, 0.55))';
       if (code === 2) return 'drop-shadow(0 0 10px rgba(154, 175, 192, 0.40))';
       if (code === 3) return 'drop-shadow(0 0 10px rgba(154, 175, 192, 0.35))';
@@ -499,7 +490,7 @@
         iconEl.innerHTML = iconForCode(code);
         iconEl.style.filter = iconGlow(code);
         document.getElementById('temperature').textContent = temp + '°';
-        setConditions(conditionText(code));
+        document.getElementById('conditions').textContent = conditionText(code);
         document.getElementById('weather-msg').textContent = weatherMessage(temp);
 
         const now = new Date();
@@ -510,7 +501,7 @@
         if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
 
       } catch {
-        setConditions('NO SIGNAL');
+        document.getElementById('conditions').textContent = 'NO SIGNAL';
         document.getElementById('weather-msg').textContent = 'Retrying...';
 
         // Retry every 15s until success
