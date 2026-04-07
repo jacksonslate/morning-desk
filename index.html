@@ -101,15 +101,6 @@
     #weather-panel  { flex: 7; }   /* ~70% */
     #creatine-panel { flex: 3; }   /* ~30% */
 
-    .divider {
-      width: 1px;
-      align-self: stretch;
-      margin: 24px 0;
-      background: linear-gradient(to bottom, transparent, var(--amber-dim) 30%, var(--amber-dim) 70%, transparent);
-      opacity: 0.45;
-      box-shadow: 0 0 6px var(--amber-glow);
-      flex-shrink: 0;
-    }
 
     /* ════════════════════════════════
        WEATHER PANEL
@@ -133,22 +124,22 @@
     .weather-icon svg { width: 100%; height: 100%; display: block; }
 
     .temperature {
-      font-size: 112px;
+      font-size: 92px;
       line-height: 0.88;
       color: var(--fg);
-      letter-spacing: -3px;
+      letter-spacing: -2px;
       flex-shrink: 0;
     }
 
     /* conditions + message span the full panel width */
     .conditions {
+      display: flex;
+      justify-content: space-between;
       font-size: 17px;
       color: var(--fg-dim);
       text-transform: uppercase;
-      letter-spacing: 6px;
       margin-top: 12px;
       width: 100%;
-      text-align: center;
     }
 
     .weather-msg {
@@ -314,8 +305,6 @@
       <div class="last-updated" id="last-updated"></div>
     </div>
 
-    <div class="divider"></div>
-
     <!-- ── Right: Creatine ── -->
     <div class="panel" id="creatine-panel">
       <div class="rpg-box" id="rpg-box">
@@ -467,6 +456,15 @@
       return "It's hot. Dress light.";
     }
 
+    // Spread condition text across full width
+    function setConditions(text) {
+      const el = document.getElementById('conditions');
+      const parts = text.includes(' ')
+        ? text.split(' ').map(w => `<span>${w}</span>`).join('')
+        : text.split('').map(c => `<span>${c}</span>`).join('');
+      el.innerHTML = parts;
+    }
+
     function iconGlow(code) {
       if (code <= 1)  return 'drop-shadow(0 0 14px rgba(255, 212, 78, 0.55))';
       if (code === 2) return 'drop-shadow(0 0 10px rgba(154, 175, 192, 0.40))';
@@ -501,7 +499,7 @@
         iconEl.innerHTML = iconForCode(code);
         iconEl.style.filter = iconGlow(code);
         document.getElementById('temperature').textContent = temp + '°';
-        document.getElementById('conditions').textContent  = conditionText(code);
+        setConditions(conditionText(code));
         document.getElementById('weather-msg').textContent = weatherMessage(temp);
 
         const now = new Date();
@@ -512,7 +510,7 @@
         if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
 
       } catch {
-        document.getElementById('conditions').textContent  = 'NO SIGNAL';
+        setConditions('NO SIGNAL');
         document.getElementById('weather-msg').textContent = 'Retrying...';
 
         // Retry every 15s until success
