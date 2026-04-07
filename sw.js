@@ -1,4 +1,4 @@
-const CACHE = 'morning-desk-v1';
+const CACHE = 'morning-desk-v2';
 const SHELL = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
