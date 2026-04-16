@@ -470,6 +470,7 @@ function iconGlow(code) {
 
     // ── Weather fetch with auto-retry ─────────────────────────
     let retryTimer = null;
+    let lastFetchTime = 0;
 
     async function fetchWeather() {
       try {
@@ -494,6 +495,7 @@ function iconGlow(code) {
         document.getElementById('weather-msg').textContent = weatherMessage(temp);
 
         const now = new Date();
+        lastFetchTime = Date.now();
         document.getElementById('last-updated').textContent =
           'UPDATED ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
@@ -586,6 +588,28 @@ function iconGlow(code) {
 
     fetchWeather();
     setInterval(fetchWeather, 30 * 60 * 1000);
+
+    // ── Keep-alive for 24/7 kiosk use ────────────────────────────
+    // 1. Wake Lock: keep screen/browser alive when screen is on
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          await navigator.wakeLock.request('screen');
+        }
+      } catch { /* silently ignore if denied */ }
+    }
+    requestWakeLock();
+
+    // 2. Re-acquire wake lock and refetch if data is stale when page wakes
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+        const staleMs = 35 * 60 * 1000; // 35 min threshold
+        if (Date.now() - lastFetchTime > staleMs) {
+          fetchWeather();
+        }
+      }
+    });
   </script>
 </body>
 </html>
